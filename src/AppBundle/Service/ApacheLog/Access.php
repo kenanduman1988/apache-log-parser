@@ -18,9 +18,9 @@ class Access extends AbstractLog implements ApacheLogInterface
      * @return AccessLog
      * @throws \Exception
      */
-    public function getEntity(string $line): object
+    public function getEntity(string $line): AccessLog
     {
-        if (!preg_match($this->pcreFormat, $line, $matches)) {
+        if (!preg_match($this->getPcreFormat(), $line, $matches)) {
             throw new \Exception('Format not match');
         }
         $entity = new AccessLog();

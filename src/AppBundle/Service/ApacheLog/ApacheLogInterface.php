@@ -9,19 +9,12 @@ namespace AppBundle\Service\ApacheLog;
 interface ApacheLogInterface
 {
     /**
-     * @return object
+     * @return void
      */
-    public function setIpPatterns(): object;
+    public function setIpPatterns();
 
     /**
      * @param string $format
      */
-    public function setFormat(string $format = null): void;
-
-    /**
-     * @param $line
-     * @return object
-     * @throws \Exception
-     */
-    public function getEntity(string $line): object;
+    public function setFormat(string $format = null);
 }

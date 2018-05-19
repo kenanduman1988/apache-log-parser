@@ -21,7 +21,7 @@ trait DoctrineTrait
      * @param $object
      * @return mixed
      */
-    protected function persistDoctrineManager($object)
+    public function persistDoctrineManager($object)
     {
         return $this->container->get('doctrine')->getManager()->persist($object);
     }
@@ -29,7 +29,7 @@ trait DoctrineTrait
     /**
      * @return mixed
      */
-    protected function flushDoctrineManager()
+    public function flushDoctrineManager()
     {
         return $this->container->get('doctrine')->getManager()->flush();
     }
@@ -37,7 +37,7 @@ trait DoctrineTrait
     /**
      * @return mixed
      */
-    protected function clearDoctrineManager()
+    public function clearDoctrineManager()
     {
         return $this->container->get('doctrine')->getManager()->clear();
     }

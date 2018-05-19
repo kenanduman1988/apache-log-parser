@@ -41,7 +41,7 @@ abstract class AbstractLog
     /**
      * @return $this
      */
-    public function setIpPatterns(): object
+    public function setIpPatterns()
     {
         // Set IPv4 & IPv6 recognition patterns
         $ipPatterns = \implode('|', [
@@ -60,8 +60,9 @@ abstract class AbstractLog
 
     /**
      * @param string $format
+     * @return $this
      */
-    public function setFormat(string $format = null): void
+    public function setFormat(string $format = null)
     {
         $format = $format ?? $this->defaultFormat;
         $expr = "#^{$format}$#";
@@ -69,5 +70,15 @@ abstract class AbstractLog
             $expr = \preg_replace("/{$pattern}/", $replace, $expr);
         }
         $this->pcreFormat = $expr;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPcreFormat(): string
+    {
+        return $this->pcreFormat;
     }
 }

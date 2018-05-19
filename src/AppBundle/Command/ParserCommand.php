@@ -3,8 +3,6 @@
 namespace AppBundle\Command;
 
 use AppBundle\Service\ApacheLog;
-use AppBundle\Traits\ContainerTrait;
-use AppBundle\Traits\DoctrineTrait;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,9 +13,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class ParserCommand extends ContainerAwareCommand
 {
-    use ContainerTrait, DoctrineTrait;
-
-
     protected function configure()
     {
         $this
@@ -35,22 +30,26 @@ class ParserCommand extends ContainerAwareCommand
     {
         /** @var ApacheLog $apacheLogService */
         $apacheLogService = $this->getContainer()->get('apachelog');
-        $apacheLogService->getAccess()->setIpPatterns();
-        $file = new \SplFileObject($this->container->getParameter('access_log_path'));
+        $access = $apacheLogService->getAccess();
+        $access
+            ->setIpPatterns()
+            ->setFormat()
+        ;
+        $file = new \SplFileObject($this->getContainer()->getParameter('access_log_path'));
         $file->setFlags(
             \SplFileObject::READ_AHEAD |
             \SplFileObject::SKIP_EMPTY |
             \SplFileObject::DROP_NEW_LINE
         );
-        $count = 0;
+        $count = 1;
         foreach ($file as $line) {
-            $entity = $apacheLogService->getAccess()->getEntity($line);
+            $entity = $access->getEntity($line);
             $apacheLogService->preventDdosAccessLog($entity);
-            $this->getApacheLogService()->persistDoctrineManager($entity);
+            $apacheLogService->persistDoctrineManager($entity);
             if (0 === 100 % $count) {
                 // batch insert each 100 entity and clean memory
-                $this->getApacheLogService()->flushDoctrineManager();
-                $this->getApacheLogService()->clearDoctrineManager();
+                $apacheLogService->flushDoctrineManager();
+                $apacheLogService->clearDoctrineManager();
             }
             $count++;
         }
