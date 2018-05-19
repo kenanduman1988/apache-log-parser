@@ -37,8 +37,8 @@ class ParserCommand extends ContainerAwareCommand
 
         /** @var ObjectManager $doctrineManager */
         $doctrineManager = $this->getContainer()->get('doctrine')->getManager();
-
-        $lines = file($this->accessLogFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $file = $this->getContainer()->getParameter('access_log_path');
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $count=0;
         foreach ($lines as $line) {
             $count++;
