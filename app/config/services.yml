@@ -37,4 +37,4 @@ services:
     apachelog:
         public: true
         class: AppBundle\Service\ApacheLog
-        arguments: []
+        arguments: ["@service_container"]
