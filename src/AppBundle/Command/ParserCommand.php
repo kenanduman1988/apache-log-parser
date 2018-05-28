@@ -3,7 +3,8 @@
 namespace AppBundle\Command;
 
 use AppBundle\Service\ApacheLog;
-use Doctrine\Common\Persistence\ObjectManager;
+use AppBundle\Traits\ContainerTrait;
+use AppBundle\Traits\DoctrineTrait;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -14,14 +15,14 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class ParserCommand extends ContainerAwareCommand
 {
-    /** @var string */
-    private $accessLogFile = '/var/log/apache2/test_access.log';
+    use ContainerTrait, DoctrineTrait;
+
 
     protected function configure()
     {
         $this
             ->setName('parser:run')
-            ->setDescription('Parse access.log from apache to mysql.')
+            ->setDescription('Parse apache log file save to mysql.')
         ;
     }
 
@@ -34,32 +35,24 @@ class ParserCommand extends ContainerAwareCommand
     {
         /** @var ApacheLog $apacheLogService */
         $apacheLogService = $this->getContainer()->get('apachelog');
-
-        /** @var ObjectManager $doctrineManager */
-        $doctrineManager = $this->getContainer()->get('doctrine')->getManager();
-        $file = $this->getContainer()->getParameter('access_log_path');
-        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $count=0;
-        foreach ($lines as $line) {
+        $apacheLogService->getAccess()->setIpPatterns();
+        $file = new \SplFileObject($this->container->getParameter('access_log_path'));
+        $file->setFlags(
+            \SplFileObject::READ_AHEAD |
+            \SplFileObject::SKIP_EMPTY |
+            \SplFileObject::DROP_NEW_LINE
+        );
+        $count = 0;
+        foreach ($file as $line) {
+            $entity = $apacheLogService->getAccess()->getEntity($line);
+            $apacheLogService->preventDdosAccessLog($entity);
+            $this->getApacheLogService()->persistDoctrineManager($entity);
+            if (0 === 100 % $count) {
+                // batch insert each 100 entity and clean memory
+                $this->getApacheLogService()->flushDoctrineManager();
+                $this->getApacheLogService()->clearDoctrineManager();
+            }
             $count++;
-            // Get entity from parsed line
-            $entity = $apacheLogService->getAccess()->parse($line);
-            /**
-             * Optional
-             * Check duplicates (Might be ddos alarm here)
-             */
-            $find = $doctrineManager->getRepository('AppBundle:AccessLog')->findBy([
-                'time' => $entity->getTime(),
-                'host' => $entity->getHost(),
-                'user' => $entity->getUser(),
-            ]);
-            if (10 < \count($find)) {
-                // DDOS ALARM
-            }
-            $doctrineManager->persist($entity);
-            if (0 === 100 % $count || $count === \count($lines) -1) {
-                $doctrineManager->flush();
-            }
         }
         $output->writeln("Found {$count} lines and imported to database");
     }
